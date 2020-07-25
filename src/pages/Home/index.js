@@ -1,28 +1,40 @@
 import React, { useEffect, useState } from 'react';
 
-import Container from '../../components/Container';
-import { FormStyled, ListStyled } from './styles';
-
-import api from '../../services/api';
-import { githubRequest } from '../../services/github';
 import { viacepRequest } from '../../services/viacep';
+
+import { FaSpinner } from 'react-icons/fa'
+
+import Container from '../../components/Container';
+import InputStyled from '../../components/Input';
+import {
+	FormStyled,
+	InfosStyled,
+	AdressStyled,
+	ButtonStyled,
+
+} from './styles';
 
 
 
 function Home() {
 
-	const [github, SetGithub] = useState('guribeiro');
-	const [githubResponse, SetGithubResponse] = useState({});
-
 	const [cep, SetCep] = useState('');
-	const [cepResponse, setCepResponse] = useState({});
+	const [cepResponse, SetCepResponse] = useState({});
+	const [loading, SetLoading] = useState(false);
+
+	const [savedCeps, SetSavedCeps] = useState([]);
 
 	const [time, SetTime] = useState(null);
 
 	useEffect(() => {
-		clearTimeout(time);
-		if (cep) {
 
+		localStorage.setItem('@debounce/ceps', JSON.stringify(savedCeps));
+	}, [savedCeps])
+
+	useEffect(() => {
+		clearTimeout(time);
+
+		if (cep) {
 			const timer = setTimeout(
 				() => {
 					try {
@@ -35,38 +47,84 @@ function Home() {
 			SetTime(timer);
 		}
 
-		setCepResponse({});
+		SetCepResponse({});
 	}, [cep])
 
 	async function loadCep(cep) {
-		const { data, status } = await viacepRequest(cep);
-		console.log(data);
-		setCepResponse(data);
+		SetLoading(true);
+		const { data } = await viacepRequest(cep);
+
+		SetCepResponse(data);
+		SetLoading(false);
 
 	}
 
-	async function loadGitUser(github) {
-		const { data } = await githubRequest(github);
-		console.log(data)
+	function handleSaveCep(e) {
+		e.preventDefault();
+		const { localidade, bairro, logradouro, uf } = cepResponse;
+
+		const newCep = {
+			cep,
+			localidade,
+			bairro,
+			logradouro,
+			uf,
+		}
+
+		if (cep !== '') {
+			SetSavedCeps([...savedCeps, newCep]);
+			SetCep('');
+			SetCepResponse({});
+			prompt('saved')
+		}
 	}
 	return (
 		<Container>
 			<h1>Studying Debounce</h1>
 			<FormStyled>
 				<label htmlFor="">CEP</label>
-				<input type="text"
+				<InputStyled
+					type="text"
 					value={cep}
 					onChange={(e) => SetCep(e.target.value)}
-				/>
-				<label htmlFor="">GITHUB</label>
-				<input
-					type="text"
-					value={github}
-					onChange={(e) => SetGithub(e.target.value)}
+					placeholder='01234-567'
 				/>
 			</FormStyled>
-			<ListStyled>
-			</ListStyled>
+			<InfosStyled>
+				<h2>Endereço</h2>
+				<AdressStyled onSubmit={handleSaveCep}>
+
+					<label>Localidade</label>
+					<InputStyled
+						type="text"
+						value={cepResponse.localidade || ''}
+						readOnly />
+
+					<label>Bairro</label>
+					<InputStyled
+						type="text"
+						value={cepResponse.bairro || ''}
+						readOnly />
+
+					<label>Logradouro</label>
+					<InputStyled
+						type="text"
+						value={cepResponse.logradouro || ''}
+						readOnly />
+
+					<label>UF</label>
+					<InputStyled
+						type="text"
+						value={cepResponse.uf || ''}
+						readOnly />
+
+					<ButtonStyled load={loading}>
+						{loading ? <FaSpinner /> : 'Cadastrar'}
+					</ButtonStyled>
+
+				</AdressStyled>
+
+			</InfosStyled>
 
 		</Container>
 	)
