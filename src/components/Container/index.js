@@ -10,10 +10,10 @@ const Container = styled.div`
 	padding: 30px;
 
 	h1{
-		border: 1px solid red;
 		display: flex;
 		align-items: center;
 		font-size: 20px;
+		line-height: 32px;
 		svg{
 			margin-right: 10px;
 		}
